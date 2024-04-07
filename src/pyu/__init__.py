@@ -16,3 +16,4 @@ finally:
     del version, PackageNotFoundError
 
 from .print import describe, clip_str
+from .itertools import zip_strict
