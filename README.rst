@@ -42,6 +42,13 @@ A longer description of your project goes here...
 
 .. _pyscaffold-notes:
 
+Installation
+=============
+
+.. code-block:: bash
+
+    pip install https://github.com/j-szulc/pyu/archive/refs/heads/main.zip
+
 Note
 ====
 
