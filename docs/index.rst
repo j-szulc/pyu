@@ -1,8 +1,8 @@
-============
-python-utils
-============
+===
+pyu
+===
 
-This is the documentation of **python-utils**.
+This is the documentation of **pyu**.
 
 .. note::
 

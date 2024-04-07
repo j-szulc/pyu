@@ -1,5 +1,5 @@
 """
-    Dummy conftest.py for python_utils.
+    Dummy conftest.py for pyu.
 
     If you don't know what this is for, just leave it empty.
     Read more about conftest.py under:

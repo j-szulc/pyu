@@ -1,27 +1,27 @@
 .. These are examples of badges you might want to add to your README:
    please update the URLs accordingly
 
-    .. image:: https://api.cirrus-ci.com/github/<USER>/python-utils.svg?branch=main
+    .. image:: https://api.cirrus-ci.com/github/<USER>/pyu.svg?branch=main
         :alt: Built Status
-        :target: https://cirrus-ci.com/github/<USER>/python-utils
-    .. image:: https://readthedocs.org/projects/python-utils/badge/?version=latest
+        :target: https://cirrus-ci.com/github/<USER>/pyu
+    .. image:: https://readthedocs.org/projects/pyu/badge/?version=latest
         :alt: ReadTheDocs
-        :target: https://python-utils.readthedocs.io/en/stable/
-    .. image:: https://img.shields.io/coveralls/github/<USER>/python-utils/main.svg
+        :target: https://pyu.readthedocs.io/en/stable/
+    .. image:: https://img.shields.io/coveralls/github/<USER>/pyu/main.svg
         :alt: Coveralls
-        :target: https://coveralls.io/r/<USER>/python-utils
-    .. image:: https://img.shields.io/pypi/v/python-utils.svg
+        :target: https://coveralls.io/r/<USER>/pyu
+    .. image:: https://img.shields.io/pypi/v/pyu.svg
         :alt: PyPI-Server
-        :target: https://pypi.org/project/python-utils/
-    .. image:: https://img.shields.io/conda/vn/conda-forge/python-utils.svg
+        :target: https://pypi.org/project/pyu/
+    .. image:: https://img.shields.io/conda/vn/conda-forge/pyu.svg
         :alt: Conda-Forge
-        :target: https://anaconda.org/conda-forge/python-utils
-    .. image:: https://pepy.tech/badge/python-utils/month
+        :target: https://anaconda.org/conda-forge/pyu
+    .. image:: https://pepy.tech/badge/pyu/month
         :alt: Monthly Downloads
-        :target: https://pepy.tech/project/python-utils
+        :target: https://pepy.tech/project/pyu
     .. image:: https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Twitter
         :alt: Twitter
-        :target: https://twitter.com/python-utils
+        :target: https://twitter.com/pyu
 
 .. image:: https://img.shields.io/badge/-PyScaffold-005CA0?logo=pyscaffold
     :alt: Project generated with PyScaffold
@@ -29,14 +29,15 @@
 
 |
 
-============
-python-utils
-============
+===
+pyu
+===
 
 
-    My library of python utils I often use (perpetually work in progress)
+    Add a short description here!
 
 
+A longer description of your project goes here...
 
 
 .. _pyscaffold-notes:

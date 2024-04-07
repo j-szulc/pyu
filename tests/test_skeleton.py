@@ -1,6 +1,6 @@
 import pytest
 
-from python_utils.skeleton import fib, main
+from pyu.skeleton import fib, main
 
 __author__ = "Jakub Szulc"
 __copyright__ = "Jakub Szulc"

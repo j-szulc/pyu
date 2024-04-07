@@ -1,11 +1,11 @@
-def get_shape(obj):
+def _get_shape(obj):
     try:
         return obj.shape
     except AttributeError:
         pass
 
 
-def get_len(obj):
+def _get_len(obj):
     try:
         return len(obj)
     except TypeError:
@@ -26,8 +26,8 @@ def describe(*obj):
     def describe_(obj):
         nonlocal current_prefix
         recurse = (isinstance(obj, list) or isinstance(obj, tuple))
-        shape = get_shape(obj)
-        len_ = get_len(obj)
+        shape = _get_shape(obj)
+        len_ = _get_len(obj)
         if (shape is None and len_ is None) and not recurse:
             value_str = clip_str(repr(obj), 20)
         elif isinstance(obj, str):
