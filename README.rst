@@ -47,7 +47,7 @@ Installation
 
 .. code-block:: bash
 
-    pip install https://github.com/j-szulc/pyu/archive/refs/heads/main.zip
+    pip install git+https://github.com/j-szulc/pyu.git
 
 Note
 ====
