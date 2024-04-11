@@ -26,6 +26,20 @@ def log_glob(glob_pattern, dirpath=None):
 def log_numpy(arr, path):
     return log_through_file(arr.tofile, path)
 
+def log_git(path="git.patch"):
+    import mlflow
+    import git
+    repo = git.Repo(search_parent_directories=True)
+    hexsha = repo.head.object.hexsha
+    diff = repo.git.diff(None)
+    def helper(target_path):
+        with open(target_path, 'w') as f:
+            f.write(f"Commit: {hexsha}\n")
+            f.write(diff)
+            f.write("\n")
+    return log_through_file(helper, path)
+
+
 @contextmanager
 def log_std():
     import mlflow
