@@ -3,6 +3,7 @@ from pathlib import Path
 import tee
 from contextlib import contextmanager
 import tempfile
+import traceback as tb
 
 def log_through_file(filegen: Callable[[Path], None], path: Path):
     import mlflow
@@ -34,6 +35,10 @@ def log_std():
         try:
             with tee.StdoutTee(stdout_path, buff=1), tee.StderrTee(stderr_path, buff=1):
                 yield
+        except Exception as e:
+            with open(stderr_path, 'a') as f:
+                tb.print_exc(file=f)
+            raise e
         finally:
             mlflow.log_artifact(stdout_path)
             mlflow.log_artifact(stderr_path)
