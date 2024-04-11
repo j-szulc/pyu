@@ -56,3 +56,14 @@ def log_std():
         finally:
             mlflow.log_artifact(stdout_path)
             mlflow.log_artifact(stderr_path)
+
+@contextmanager
+def autolog(experiment_name=None):
+    import mlflow
+    if experiment_name is None:
+        from unique_names_generator import get_random_name
+        experiment_name = get_random_name()
+    mlflow.set_experiment(experiment_name)
+    mlflow.autolog()
+    with log_std(), log_git(), mlflow.start_run():
+        yield
