@@ -26,7 +26,7 @@ def log_glob(glob_pattern, dirpath=None):
 def log_numpy(arr, path):
     return log_through_file(arr.tofile, path)
 
-def log_git(path="git.patch"):
+def log_git(path="patch.txt"):
     import mlflow
     import git
     repo = git.Repo(search_parent_directories=True)
