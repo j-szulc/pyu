@@ -30,7 +30,10 @@ def log_git(path="git.patch"):
     import mlflow
     import git
     repo = git.Repo(search_parent_directories=True)
-    hexsha = repo.head.object.hexsha
+    try:
+        hexsha = repo.head.object.hexsha
+    except ValueError:
+        hexsha = "No commits yet!"
     diff = repo.git.diff(None)
     def helper(target_path):
         with open(target_path, 'w') as f:
