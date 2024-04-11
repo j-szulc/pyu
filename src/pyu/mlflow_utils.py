@@ -68,5 +68,9 @@ def autolog(experiment_name=None):
         experiment_name = get_random_name()
     mlflow.set_experiment(experiment_name)
     mlflow.autolog()
-    with log_std(), log_git(), mlflow.start_run():
+    with mlflow.start_run(), log_std():
+        try:
+            log_git()
+        except:
+            pass
         yield
