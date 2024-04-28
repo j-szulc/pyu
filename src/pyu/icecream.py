@@ -37,6 +37,34 @@ def register_printers(target: SuperDispatchMethod):
             return len(obj) < MAX_CHAR_BASIC_STR
         return isinstance(obj, (int, float, bool))
 
+    from typing import Iterable
+    @target.register_type(Iterable)
+    def _(arg, recurse=True):
+        try:
+            length = len(arg)
+        except TypeError:
+            length = "unknown"
+        top = f"{type(arg).__name__}(length={length})"
+        if not recurse:
+            return top
+        return helper(top, arg)
+    
+    from typing import Generator
+    @target.register_type(Generator)
+    def _(arg, recurse=True):
+        top = "Generator"
+        if not recurse:
+            return top
+        children = []
+        for i, x in enumerate(arg):
+            children.append(x)
+            if i >= MAX_CHILDREN_PRINT:
+                break
+        import warnings
+        warnings.warn(f"Consumed {len(children)} items from generator.")
+        return helper(top, children, max_children=MAX_CHILDREN_PRINT)
+        
+
     @target.register_type(LazyType("torch.Tensor"))
     def _(arg, recurse=None):
         return f"Tensor(shape={arg.shape}, dtype={arg.dtype})"
@@ -48,14 +76,6 @@ def register_printers(target: SuperDispatchMethod):
     @target.register_type(LazyType("PIL.Image.Image"))
     def _(arg, recurse=None):
         return f"Image(size={arg.size}, mode={arg.mode})"
-    
-    @target.register_type(list)
-    @target.register_type(tuple)
-    def _(arg, recurse=True):
-        top = f"list(length={len(arg)})"
-        if recurse:
-            return helper(top, arg)
-        return top
 
     from dataclasses import dataclass
     from typing import Any
@@ -63,7 +83,7 @@ def register_printers(target: SuperDispatchMethod):
     class DictItem:
         key: str
         value: Any
-    
+
     @target.register_type(DictItem)
     def _(arg, recurse=True):
         return f"{target(arg.key, recurse=False)}: {target(arg.value, recurse=recurse)}"
@@ -88,3 +108,11 @@ ic = icecream.IceCreamDebugger(argToStringFunction=__argumentToString)
 
 def include_context(val=True):
     ic.configureOutput(includeContext=val)
+
+def f():
+    for i in range(10):
+        yield i
+
+t = f()
+ic(t)
+ic(t)
