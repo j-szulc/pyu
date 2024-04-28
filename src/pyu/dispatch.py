@@ -38,7 +38,7 @@ class SuperDispatchMethod:
             priority = self.registry[-1][0] - 1
         else:
             assert priority not in self.priorities, f"Priority {priority} already registered"
-        self.registry.add((priority, cond, func))
+        self.registry.append((priority, cond, func))
         self.priorities.add(priority)
         self.__sort()
     

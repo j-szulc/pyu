@@ -1,5 +1,5 @@
-from dispatch import SuperDispatchMethod
-from lazy_type import LazyType
+from .dispatch import SuperDispatchMethod
+from .lazy_type import LazyType
 import icecream
 
 INDENT = 4

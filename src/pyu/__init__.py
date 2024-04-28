@@ -14,19 +14,3 @@ except PackageNotFoundError:  # pragma: no cover
     __version__ = "unknown"
 finally:
     del version, PackageNotFoundError
-
-class HasShapeMeta(type):
-
-    def __instancecheck__(self, instance):
-        print('instance:', instance, "cls", self)
-        return hasattr(instance, 'shape')
-
-class HasShape(metaclass=HasShapeMeta):
-    pass
-
-class Test:
-
-    def __init__(self):
-        self.shape = 1
-
-print(isinstance(Test(), HasShape))
