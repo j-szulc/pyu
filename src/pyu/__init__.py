@@ -15,6 +15,18 @@ except PackageNotFoundError:  # pragma: no cover
 finally:
     del version, PackageNotFoundError
 
-# from .print import describe, clip_str
-# from .itertools import zip_strict
-from .mlflow_utils import *
+class HasShapeMeta(type):
+
+    def __instancecheck__(self, instance):
+        print('instance:', instance, "cls", self)
+        return hasattr(instance, 'shape')
+
+class HasShape(metaclass=HasShapeMeta):
+    pass
+
+class Test:
+
+    def __init__(self):
+        self.shape = 1
+
+print(isinstance(Test(), HasShape))

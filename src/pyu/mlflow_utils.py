@@ -60,7 +60,7 @@ def log_std():
             mlflow.log_artifact(stdout_path)
             mlflow.log_artifact(stderr_path)
 
-def log_metric(name, value, verbose=True):
+def log_metric(name, value, verbose=False): 
     import mlflow
     mlflow.log_metric(name, value)
     if verbose:
