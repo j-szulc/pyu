@@ -80,3 +80,38 @@ def autolog(experiment_name=None):
         except:
             pass
         yield
+
+def log_model(model, name=None, epoch=None, zfill=4, path="checkpoints"):
+    import torch
+    if name is None:
+        name = model.__class__.__name__
+    if epoch is not None:
+        name += f"_{str(epoch).zfill(zfill)}"
+    log_through_file(lambda path: torch.save(model.state_dict(), path), f"{path}/{name}.pt")
+
+def download_checkpoint(name, run_id="latest", epoch="latest", path="checkpoints"):
+    import mlflow
+    if run_id == "latest":
+        run_id = mlflow.search_runs(order_by=["start_time"], max_results=1).iloc[0].run_id
+    artifacts = mlflow.artifacts.list_artifacts(run_id=run_id, artifact_paths=path)
+    artifact_paths = [artifact.path for artifact in artifacts]
+    import re
+    rgx = re.escape(name) + (r"_(\d+)\.pt" if epoch == "latest" else f"_{epoch}\.pt")
+    # Filter by name
+    matches = {path: re.search(rgx, path) for path in artifact_paths}
+    matches = {path: int(match.group(1)) for path, match in matches.items() if match}
+    best_match = max(matches.items(), key=lambda kv:kv[1]) if matches else None
+    if best_match is not None:
+        path = best_match[0]
+        return mlflow.artifacts.download_artifacts(artifact_path=path, run_id=run_id), best_match[1]
+
+def load_checkpoint(model, name=None, run_id="latest", epoch="latest", path="checkpoints"):
+    import torch
+    if name is None:
+        name = model.__class__.__name__
+    download_path, epoch = download_checkpoint(name, run_id, epoch, path)
+    if download_path is None:
+        return
+    checkpoint = torch.load(download_path, map_location=model.device)
+    model.load_state_dict(checkpoint)
+    return epoch
