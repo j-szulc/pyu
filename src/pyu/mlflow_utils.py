@@ -5,7 +5,7 @@ from contextlib import contextmanager
 import tempfile
 import traceback as tb
 
-def log_through_file(filegen: Callable[[Path], None], path: Path):
+def log_through_file(filegen: Callable[[Path], None], path: Path, print_uid=False):
     import mlflow
     path = Path(path)
     parent = path.parent
@@ -16,6 +16,16 @@ def log_through_file(filegen: Callable[[Path], None], path: Path):
         tmpfile = Path(tmpdirname) / path.name
         filegen(tmpfile)
         mlflow.log_artifact(tmpfile, parent)
+    artifact_uid = mlflow.get_artifact_uri(str((parent or Path("/")) / path.name))
+    if print_uid:
+        print(f"Artifact UID: {artifact_uid}")
+
+def load_pickle(artifact_uid):
+    import mlflow
+    import pickle
+    downloaded = mlflow.artifacts.download_artifacts(artifact_uid)
+    return pickle.load(open(downloaded, 'rb'))
+
 
 def log_glob(glob_pattern, dirpath=None):
     from glob import glob
@@ -23,11 +33,10 @@ def log_glob(glob_pattern, dirpath=None):
     for file in glob(glob_pattern):
         mlflow.log_artifact(file, dirpath)
 
-def log_numpy(arr, path):
-    return log_through_file(arr.tofile, path)
+def log_numpy(arr, path, print_uid=False):
+    return log_through_file(arr.tofile, path, print_uid)
 
-def log_git(path="patch.txt"):
-    import mlflow
+def log_git(path="patch.txt", print_uid=False):
     import git
     repo = git.Repo(search_parent_directories=True)
     try:
@@ -40,8 +49,11 @@ def log_git(path="patch.txt"):
             f.write(f"Commit: {hexsha}\n")
             f.write(diff)
             f.write("\n")
-    return log_through_file(helper, path)
+    return log_through_file(helper, path, print_uid)
 
+def log_pickle(obj, path, print_uid=False):
+    import pickle
+    return log_through_file(lambda path: pickle.dump(obj, open(path, 'wb')), path, print_uid)
 
 @contextmanager
 def log_std():
@@ -60,7 +72,7 @@ def log_std():
             mlflow.log_artifact(stdout_path)
             mlflow.log_artifact(stderr_path)
 
-def log_metric(name, value, verbose=False): 
+def log_metric(name, value, verbose=False):
     import mlflow
     mlflow.log_metric(name, value)
     if verbose:
@@ -81,13 +93,13 @@ def autolog(experiment_name=None):
             pass
         yield
 
-def log_model(model, name=None, epoch=None, zfill=4, path="checkpoints"):
+def log_model(model, name=None, epoch=None, zfill=4, path="checkpoints", print_uid=False):
     import torch
     if name is None:
         name = model.__class__.__name__
     if epoch is not None:
         name += f"_{str(epoch).zfill(zfill)}"
-    log_through_file(lambda path: torch.save(model.state_dict(), path), f"{path}/{name}.pt")
+    log_through_file(lambda path: torch.save(model.state_dict(), path), f"{path}/{name}.pt", print_uid)
 
 def download_checkpoint(name, run_id="latest", epoch="latest", path="checkpoints"):
     import mlflow
@@ -96,7 +108,7 @@ def download_checkpoint(name, run_id="latest", epoch="latest", path="checkpoints
     artifacts = mlflow.artifacts.list_artifacts(run_id=run_id, artifact_paths=path)
     artifact_paths = [artifact.path for artifact in artifacts]
     import re
-    rgx = re.escape(name) + (r"_(\d+)\.pt" if epoch == "latest" else f"_{epoch}\.pt")
+    rgx = re.escape(name) + (r"_(\d+)\.pt" if epoch == "latest" else f"_{epoch}.pt")
     # Filter by name
     matches = {path: re.search(rgx, path) for path in artifact_paths}
     matches = {path: int(match.group(1)) for path, match in matches.items() if match}
