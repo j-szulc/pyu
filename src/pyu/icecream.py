@@ -108,11 +108,3 @@ ic = icecream.IceCreamDebugger(argToStringFunction=__argumentToString)
 
 def include_context(val=True):
     ic.configureOutput(includeContext=val)
-
-def f():
-    for i in range(10):
-        yield i
-
-t = f()
-ic(t)
-ic(t)
