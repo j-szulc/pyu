@@ -49,6 +49,19 @@ Installation
 
     pip install git+https://github.com/j-szulc/pyu.git
 
+Forced installation
+===================
+
+If you're fine with forcing the package installation inside your script, you can use the following code:
+.. code-block:: python
+
+    try:
+        import pyu
+    except ModuleNotFoundError:
+        import os
+        os.system('pip install git+https://github.com/j-szulc/pyu.git')
+        import pyu
+
 Note
 ====
 
