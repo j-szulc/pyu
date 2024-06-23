@@ -69,10 +69,6 @@ def rerun_file(file, *args, **kwargs):
 def rerun_where_imported(*args, **kwargs):
     rerun_file(where_imported, *args, **kwargs)
 
-def monkeypatch():
-    import argparse
-    argparse.ArgumentParser = PatchedArgumentParser
-
 class PatchedArgumentParser(ArgumentParser):
 
     def __init__(self, *args, **kwargs):
