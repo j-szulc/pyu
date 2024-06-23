@@ -116,7 +116,8 @@ class PatchedArgumentParser(ArgumentParser):
             raise ForcedException()
         override_args = os.environ.get('PYU_CLI_TO_LIB_OVERRIDE_ARGS')
         if override_args is not None:
-            arg_strings.extend(json.loads(override_args))
+            # TODO: extend instead of replacing
+            arg_strings = json.loads(override_args)
         return super()._parse_known_args(arg_strings, namespace)
 
     def rerun_main(self, *args, **kwargs):
