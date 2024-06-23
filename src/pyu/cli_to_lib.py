@@ -33,6 +33,9 @@ from pyu.env_utils import override_env
 from typing import List, Tuple
 import inspect
 
+class ForcedException(Exception):
+    pass
+
 def pyargs_to_cliargs(*args, **kwargs):
     def generator():
         for arg in args:
@@ -57,23 +60,39 @@ def backtrack_import(frame):
     return backtrack_frame(frame, ["<frozen importlib._bootstrap_external>", "<frozen importlib._bootstrap>"])
 
 where_imported = backtrack_import(inspect.currentframe().f_back).f_code.co_filename
+default_parser = None
 
 def rerun_file(file, *args, **kwargs):
     with override_env(
-        PYU_CLI_TO_LIB_FORCE_EXCEPTION='0',
         PYU_CLI_TO_LIB_NO_SYSEXIT='1',
         PYU_CLI_TO_LIB_OVERRIDE_ARGS=pyargs_to_cliargs(*args, **kwargs)
     ):
-        exec(open(file).read(), {"__name__": "__main__"})
+        exec(open(file).read(), {**globals(), "__name__": "__main__"})
 
 def rerun_where_imported(*args, **kwargs):
-    rerun_file(where_imported, *args, **kwargs)
+    with override_env(
+        PYU_CLI_TO_LIB_FORCE_EXCEPTION="1",
+        PYU_CLI_TO_LIB_STORE_DEFAULT_PARSER="1",
+        PYU_CLI_TO_LIB_FORCE_MAIN_FILE=where_imported
+    ):
+        try:
+            rerun_file(where_imported, *args, **kwargs)
+            raise RuntimeError("Expected ForcedException to be raised!")
+        except ForcedException:
+            pass
+    assert default_parser is not None, "Reran the main function but no default parser was stored!"
+    default_parser.rerun_main(*args, **kwargs)
 
 class PatchedArgumentParser(ArgumentParser):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.main_file = inspect.currentframe().f_back.f_code.co_filename
+        self.main_file = os.environ.get('PYU_CLI_TO_LIB_FORCE_MAIN_FILE')
+        if self.main_file is None:
+            self.main_file = inspect.currentframe().f_back.f_code.co_filename
+        if os.getenv('PYU_CLI_TO_LIB_STORE_DEFAULT_PARSER', '0') == '1':
+            global default_parser
+            default_parser = self
 
     def error(self, message):
         """error(message: string)
@@ -94,7 +113,7 @@ class PatchedArgumentParser(ArgumentParser):
 
     def _parse_known_args(self, arg_strings: List[str], namespace: Namespace) -> Tuple[Namespace, List[str]]:
         if os.getenv('PYU_CLI_TO_LIB_FORCE_EXCEPTION', '0') == '1':
-            raise RuntimeError("Forced exception")
+            raise ForcedException()
         override_args = os.environ.get('PYU_CLI_TO_LIB_OVERRIDE_ARGS')
         if override_args is not None:
             arg_strings.extend(json.loads(override_args))
