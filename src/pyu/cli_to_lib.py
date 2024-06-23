@@ -30,6 +30,7 @@ import sys
 import os
 import json
 from pyu.env_utils import override_env
+from typing import List
 
 def pyargs_to_cliargs(*args, **kwargs):
     def generator():
@@ -70,7 +71,7 @@ class PatchedArgumentParser(ArgumentParser):
         else:
             super().error(message)
 
-    def _parse_known_args(self, arg_strings: list[str], namespace: Namespace) -> tuple[Namespace, list[str]]:
+    def _parse_known_args(self, arg_strings: List[str], namespace: Namespace) -> tuple[Namespace, List[str]]:
         if os.getenv('PYU_CLI_TO_LIB_FORCE_EXCEPTION', '0') == '1':
             raise RuntimeError("Forced exception")
         override_args = os.environ.get('PYU_CLI_TO_LIB_OVERRIDE_ARGS')
