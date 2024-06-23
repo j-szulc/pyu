@@ -31,6 +31,7 @@ import os
 import json
 from pyu.env_utils import override_env
 from typing import List, Tuple
+import inspect
 
 def pyargs_to_cliargs(*args, **kwargs):
     def generator():
@@ -47,11 +48,31 @@ def pyargs_to_cliargs(*args, **kwargs):
             yield str(value)
     return json.dumps(list(generator()))
 
+def backtrack_frame(frame, blacklisted_files):
+    while frame.f_code.co_filename in blacklisted_files:
+        frame = frame.f_back
+    return frame
+
+def backtrack_import(frame):
+    return backtrack_frame(frame, ["<frozen importlib._bootstrap_external>", "<frozen importlib._bootstrap>"])
+
+where_imported = backtrack_import(inspect.currentframe().f_back).f_code.co_filename
+
+def rerun_file(file, *args, **kwargs):
+    with override_env(
+        PYU_CLI_TO_LIB_FORCE_EXCEPTION='0',
+        PYU_CLI_TO_LIB_NO_SYSEXIT='1',
+        PYU_CLI_TO_LIB_OVERRIDE_ARGS=pyargs_to_cliargs(*args, **kwargs)
+    ):
+        exec(open(file).read(), {"__name__": "__main__"})
+
+def rerun_where_imported(*args, **kwargs):
+    rerun_file(where_imported, *args, **kwargs)
+
 class PatchedArgumentParser(ArgumentParser):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        import inspect
         self.main_file = inspect.currentframe().f_back.f_code.co_filename
 
     def error(self, message):
@@ -80,9 +101,4 @@ class PatchedArgumentParser(ArgumentParser):
         return super()._parse_known_args(arg_strings, namespace)
 
     def rerun_main(self, *args, **kwargs):
-        with override_env(
-            PYU_CLI_TO_LIB_FORCE_EXCEPTION='0',
-            PYU_CLI_TO_LIB_NO_SYSEXIT='1',
-            PYU_CLI_TO_LIB_OVERRIDE_ARGS=pyargs_to_cliargs(*args, **kwargs)
-        ):
-            exec(open(self.main_file).read(), {"__name__": "__main__"})
+        rerun_file(self.main_file, *args, **kwargs)
