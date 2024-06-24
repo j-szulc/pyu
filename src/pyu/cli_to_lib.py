@@ -69,6 +69,27 @@ def rerun_file(file, *args, **kwargs):
     ):
         exec(open(file).read(), {**globals(), "__name__": "__main__"})
 
+def reparse_file(file, *args, **kwargs):
+    with override_env(
+        PYU_CLI_TO_LIB_CAPTURE_ARGS_FLAG='1',
+        PYU_CLI_TO_LIB_CAPTURED_ARGS="",
+        PYU_CLI_TO_LIB_STORE_DEFAULT_PARSER="1",
+        PYU_CLI_TO_LIB_FORCE_EXCEPTION="1",
+    ):
+        try:
+            rerun_file(file, *args, **kwargs)
+            raise RuntimeError("Expected ForcedException to be raised!")
+        except ForcedException:
+            pass
+        captured = os.environ.get("PYU_CLI_TO_LIB_CAPTURED_ARGS")
+        if captured is None:
+            raise ValueError("Failed to capture arguments!")
+        arg_strings = json.loads(captured)
+    with override_env(
+        PYU_CLI_TO_LIB_FORCE_EXCEPTION="0",
+    ):
+        return default_parser.parse_args(arg_strings)
+
 def rerun_where_imported(*args, **kwargs):
     with override_env(
         PYU_CLI_TO_LIB_FORCE_EXCEPTION="1",
@@ -82,6 +103,12 @@ def rerun_where_imported(*args, **kwargs):
             pass
     assert default_parser is not None, "Reran the main function but no default parser was stored!"
     default_parser.rerun_main(*args, **kwargs)
+
+def reparse_where_imported(*args, **kwargs):
+    with override_env(
+        PYU_CLI_TO_LIB_FORCE_MAIN_FILE=where_imported
+    ):
+        return reparse_file(where_imported, *args, **kwargs)
 
 class PatchedArgumentParser(ArgumentParser):
 
@@ -112,13 +139,24 @@ class PatchedArgumentParser(ArgumentParser):
             super().error(message)
 
     def _parse_known_args(self, arg_strings: List[str], namespace: Namespace) -> Tuple[Namespace, List[str]]:
-        if os.getenv('PYU_CLI_TO_LIB_FORCE_EXCEPTION', '0') == '1':
-            raise ForcedException()
+        force_exception = (os.getenv('PYU_CLI_TO_LIB_FORCE_EXCEPTION', '0') == '1')
+        capture_args = (os.getenv('PYU_CLI_TO_LIB_CAPTURE_ARGS_FLAG', '0') == '1')
         override_args = os.environ.get('PYU_CLI_TO_LIB_OVERRIDE_ARGS')
+
+        if force_exception and not capture_args:
+            raise ForcedException()
         if override_args is not None:
             # TODO: extend instead of replacing
             arg_strings = json.loads(override_args)
-        return super()._parse_known_args(arg_strings, namespace)
+        result = super()._parse_known_args(arg_strings, namespace)
+        if capture_args:
+            os.environ["PYU_CLI_TO_LIB_CAPTURED_ARGS"] = json.dumps(arg_strings)
+        if force_exception:
+            raise ForcedException()
+        return result
 
     def rerun_main(self, *args, **kwargs):
         rerun_file(self.main_file, *args, **kwargs)
+
+    def reparse_main(self, *args, **kwargs):
+        return reparse_file(self.main_file, *args, **kwargs)
