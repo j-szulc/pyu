@@ -81,14 +81,20 @@ def reparse_file(file, *args, **kwargs):
     ):
         return default_parser.parse_args(arg_strings)
 
+def get_module_path(m):
+    try:
+        return m.__path__
+    except AttributeError:
+        return m.__file__
+
 def rerun_module(m, *args, **kwargs):
     with override_env(
         PYU_CLI_TO_LIB_FORCE_EXCEPTION="1",
         PYU_CLI_TO_LIB_STORE_DEFAULT_PARSER="1",
-        PYU_CLI_TO_LIB_FORCE_MAIN_FILE=m.__path__,
+        PYU_CLI_TO_LIB_FORCE_MAIN_FILE=get_module_path(m),
     ):
         try:
-            rerun_file(m.__path__, *args, **kwargs)
+            rerun_file(get_module_path(m), *args, **kwargs)
             raise RuntimeError("Expected ForcedException to be raised!")
         except ForcedException:
             pass
@@ -97,9 +103,9 @@ def rerun_module(m, *args, **kwargs):
 
 def reparse_module(m, *args, **kwargs):
     with override_env(
-        PYU_CLI_TO_LIB_FORCE_MAIN_FILE=m.__path__,
+        PYU_CLI_TO_LIB_FORCE_MAIN_FILE=get_module_path(m),
     ):
-        return reparse_file(m.__path__, *args, **kwargs)
+        return reparse_file(get_module_path(m), *args, **kwargs)
 
 class PatchedArgumentParser(ArgumentParser):
 
