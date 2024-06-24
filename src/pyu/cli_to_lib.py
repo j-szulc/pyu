@@ -51,15 +51,6 @@ def pyargs_to_cliargs(*args, **kwargs):
             yield str(value)
     return json.dumps(list(generator()))
 
-def backtrack_frame(frame, blacklisted_files):
-    while frame.f_code.co_filename in blacklisted_files:
-        frame = frame.f_back
-    return frame
-
-def backtrack_import(frame):
-    return backtrack_frame(frame, ["<frozen importlib._bootstrap_external>", "<frozen importlib._bootstrap>"])
-
-where_imported = backtrack_import(inspect.currentframe().f_back).f_code.co_filename
 default_parser = None
 
 def rerun_file(file, *args, **kwargs):
@@ -90,25 +81,25 @@ def reparse_file(file, *args, **kwargs):
     ):
         return default_parser.parse_args(arg_strings)
 
-def rerun_where_imported(*args, **kwargs):
+def rerun_module(m, *args, **kwargs):
     with override_env(
         PYU_CLI_TO_LIB_FORCE_EXCEPTION="1",
         PYU_CLI_TO_LIB_STORE_DEFAULT_PARSER="1",
-        PYU_CLI_TO_LIB_FORCE_MAIN_FILE=where_imported
+        PYU_CLI_TO_LIB_FORCE_MAIN_FILE=m.__path__,
     ):
         try:
-            rerun_file(where_imported, *args, **kwargs)
+            rerun_file(m.__path__, *args, **kwargs)
             raise RuntimeError("Expected ForcedException to be raised!")
         except ForcedException:
             pass
     assert default_parser is not None, "Reran the main function but no default parser was stored!"
     default_parser.rerun_main(*args, **kwargs)
 
-def reparse_where_imported(*args, **kwargs):
+def reparse_module(m, *args, **kwargs):
     with override_env(
-        PYU_CLI_TO_LIB_FORCE_MAIN_FILE=where_imported
+        PYU_CLI_TO_LIB_FORCE_MAIN_FILE=m.__path__,
     ):
-        return reparse_file(where_imported, *args, **kwargs)
+        return reparse_file(m.__path__, *args, **kwargs)
 
 class PatchedArgumentParser(ArgumentParser):
 
