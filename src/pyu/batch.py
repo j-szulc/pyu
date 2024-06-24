@@ -67,10 +67,39 @@ def batch_rename(in_files, out_files, dry_run=False):
             out_file.parent.mkdir(parents=True, exist_ok=True)
             in_file.rename(out_file)
 
-
-def simple_batch_rename(root_dir, filter_glob="./**/*", no_dirs=True, new_suffix=None, dry_run=False, **kwargs):
+def lambda_batch_rename(root_dir, rename_fun, filter_glob="./**/*", filter_out_dirs=True, filter_out_files=False, dry_run=False):
     from pathlib import Path
     root_dir = Path(root_dir).absolute()
+
+    in_files = list(Path(root_dir).rglob(filter_glob))
+    if filter_out_dirs and filter_out_files:
+        import logging
+        logging.warning("Filtering out everything!")
+    if filter_out_dirs:
+        in_files = [f for f in in_files if not f.is_dir()]
+    if filter_out_files:
+        in_files = [f for f in in_files if f.is_dir()]
+    out_files = in_files
+    if not isinstance(rename_fun, list):
+        rename_fun = [rename_fun]
+    assert rename_fun, "No renaming functions specified!"
+    for fun in rename_fun:
+        out_files = [fun(f) for f in out_files]
+
+    batch_rename(in_files, out_files, dry_run=dry_run)
+
+def simple_batch_rename(root_dir, filter_glob="./**/*", filter_out_dirs=True, filter_out_files=False, dry_run=False, new_suffix=None, **kwargs):
+
+    if not (kwargs or new_suffix):
+        import logging
+        logging.warning("No renaming specified!")
+        return
+
+    rename_fun_list = []
+    def override_suffix(f):
+        return f.with_suffix(new_suffix)
+    if new_suffix:
+        rename_fun_list.append(override_suffix)
 
     import re
     PARENT_OVERRIDE_RE = re.compile(r"p(\d+)")
@@ -82,20 +111,14 @@ def simple_batch_rename(root_dir, filter_glob="./**/*", no_dirs=True, new_suffix
         return result
     kwargs = {map_kwargs(k): v for k, v in kwargs.items()}
 
-    in_files = list(Path(root_dir).rglob(filter_glob))
-    if no_dirs:
-        in_files = [f for f in in_files if not f.is_dir()]
-    out_files = in_files
-    if new_suffix is not None:
-        out_files = [f.with_suffix(new_suffix) for f in out_files]
-
-    out_files_parts = {f: list(f.absolute().relative_to(root_dir).parts[:-1])for f in out_files}
-    for f in out_files_parts:
-        parts = out_files_parts[f]
+    from pathlib import Path
+    def override_parent(f):
+        parts = list(f.parts)
         for i, new_parent in kwargs.items():
             assert len(parts) > i, f"Parent {i} does not exist for {f}, parents: {parts}"
             parts[i] = new_parent
-        out_files_parts[f] = [p for p in parts if p]
+        return Path.joinpath(*[p for p in parts if p], f.name)
+    if kwargs:
+        rename_fun_list.append(override_parent)
 
-    out_files = [Path(root_dir).joinpath(*parts, f.name) for f, parts in out_files_parts.items()]
-    batch_rename(in_files, out_files, dry_run=dry_run)
+    lambda_batch_rename(root_dir, rename_fun_list, filter_glob=filter_glob, filter_out_dirs=filter_out_dirs, filter_out_files=filter_out_files, dry_run=dry_run)
