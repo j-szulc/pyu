@@ -88,18 +88,7 @@ def get_module_path(m):
         return m.__file__
 
 def rerun_module(m, *args, **kwargs):
-    with override_env(
-        PYU_CLI_TO_LIB_FORCE_EXCEPTION="1",
-        PYU_CLI_TO_LIB_STORE_DEFAULT_PARSER="1",
-        PYU_CLI_TO_LIB_FORCE_MAIN_FILE=get_module_path(m),
-    ):
-        try:
-            rerun_file(get_module_path(m), *args, **kwargs)
-            raise RuntimeError("Expected ForcedException to be raised!")
-        except ForcedException:
-            pass
-    assert default_parser is not None, "Reran the main function but no default parser was stored!"
-    default_parser.rerun_main(*args, **kwargs)
+    rerun_file(get_module_path(m), *args, **kwargs)
 
 def reparse_module(m, *args, **kwargs):
     with override_env(
