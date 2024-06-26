@@ -18,6 +18,9 @@ def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", outp
     import logging
     from tqdm import tqdm
     root_dir = Path(root_dir)
+    if new_root_dir:
+        new_root_dir = Path(new_root_dir)
+        new_root_dir.mkdir(parents=True, exist_ok=True)
     to_process = []
     for input_file in root_dir.rglob(input_glob):
         if input_file.is_dir():
