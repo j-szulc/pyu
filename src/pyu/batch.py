@@ -1,23 +1,15 @@
-
-def process(fun, input_file, output_file, only_cache=False):
-    from pathlib import Path
-    import logging
+def __process(fun, input_file, output_file, output_file_arg=False):
     from .dump import dump
-    output_file = Path(output_file)
-    if output_file.exists():
-        logging.debug(f"Skipping {fun.__name__}({input_file}) -> {output_file}")
-        if only_cache:
-            return True
-        return
-    if only_cache:
-        return False
     temp_output_file = output_file.with_suffix(".incomplete")
-    with open(temp_output_file, "wb") as f:
-        result = fun(input_file)
-        dump(result, f)
+    if output_file_arg:
+        fun(input_file, temp_output_file)
+    else:
+        with open(temp_output_file, "wb") as f:
+            result = fun(input_file)
+            dump(result, f)
     temp_output_file.rename(output_file)
 
-def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out"):
+def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", output_file_arg=False):
     from pathlib import Path
     import logging
     from tqdm import tqdm
@@ -27,11 +19,13 @@ def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out"):
         if input_file.is_dir():
             continue
         output_file = input_file.with_suffix(output_suffix)
-        if not process(fun, input_file, output_file, only_cache=True):
+        if output_file.exists():
+            logging.debug(f"Skipping {input_file} -> {output_file}, output already exists")
+        else:
             to_process.append((input_file, output_file))
     for input_file, output_file in tqdm(to_process):
         logging.debug(f"Processing {input_file} -> {output_file}")
-        process(fun, input_file, output_file)
+        __process(fun, input_file, output_file, output_file_arg=output_file_arg)
 
 def get_duplicates(l):
     from collections import defaultdict
