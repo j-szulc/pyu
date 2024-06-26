@@ -20,22 +20,17 @@ def log_through_file(filegen: Callable[[Path], None], path: Path, print_uid=Fals
     if print_uid:
         print(f"Artifact UID: {artifact_uid}")
 
-def __get_pickle_engine(engine):
-    if engine == "pickle":
-        import pickle
-        return pickle
-    elif engine == "dill":
-        import dill
-        return dill
-    else:
-        raise ValueError(f"Invalid engine {engine}")
-
-def load_pickle(artifact_uid, engine="pickle"):
+def load_pickle(artifact_uid):
     import mlflow
-    pickle = __get_pickle_engine(engine)
+    import pickle
     downloaded = mlflow.artifacts.download_artifacts(artifact_uid)
     return pickle.load(open(downloaded, 'rb'))
 
+def load_dill(artifact_uid):
+    import mlflow
+    import dill
+    downloaded = mlflow.artifacts.download_artifacts(artifact_uid)
+    return dill.load(open(downloaded, 'rb'))
 
 def log_glob(glob_pattern, dirpath=None):
     from glob import glob
@@ -61,9 +56,13 @@ def log_git(path="patch.txt", print_uid=False):
             f.write("\n")
     return log_through_file(helper, path, print_uid)
 
-def log_pickle(obj, path, print_uid=False, engine="pickle"):
-    pickle = __get_pickle_engine(engine)
+def log_pickle(obj, path, print_uid=False):
+    import pickle
     return log_through_file(lambda path: pickle.dump(obj, open(path, 'wb')), path, print_uid)
+
+def log_dill(obj, path, print_uid=False):
+    import dill
+    return log_through_file(lambda path: dill.dump(obj, open(path, 'wb')), path, print_uid)
 
 @contextmanager
 def log_std():
