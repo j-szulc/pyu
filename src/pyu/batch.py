@@ -1,6 +1,10 @@
+
+def __temp_in_working_dir(path, label="temp"):
+    return path.with_suffix(f".{label}{path.suffix}")
+
 def __process(fun, input_file, output_file, output_file_arg=False):
     from .dump import dump
-    temp_output_file = output_file.with_suffix(".incomplete")
+    temp_output_file = __temp_in_working_dir(output_file, "incomplete")
     if output_file_arg:
         fun(input_file, temp_output_file)
     else:
