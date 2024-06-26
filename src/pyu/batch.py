@@ -38,7 +38,7 @@ def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", outp
             logging.debug(f"Processing {input_file} -> {output_file}")
             __process(fun, input_file, output_file, output_file_arg=output_file_arg)
     else:
-        pmap(lambda in_, out: __process(fun, in_, out, output_file_arg), *zip(to_process), max_workers=max_workers)
+        pmap(lambda in_, out: __process(fun, in_, out, output_file_arg), *zip(*to_process), max_workers=max_workers, use_dill=True)
 
 def __get_duplicates(l):
     from collections import defaultdict
