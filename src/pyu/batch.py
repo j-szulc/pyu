@@ -13,7 +13,7 @@ def __process(fun, input_file, output_file, output_file_arg=False):
             dump(result, f)
     temp_output_file.rename(output_file)
 
-def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", output_file_arg=False):
+def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", output_file_arg=False, new_root_dir=None):
     from pathlib import Path
     import logging
     from tqdm import tqdm
@@ -23,6 +23,8 @@ def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", outp
         if input_file.is_dir():
             continue
         output_file = input_file.with_suffix(output_suffix)
+        if new_root_dir:
+            output_file = new_root_dir / output_file.relative_to(root_dir)
         if output_file.exists():
             logging.debug(f"Skipping {input_file} -> {output_file}, output already exists")
         else:
@@ -31,7 +33,7 @@ def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", outp
         logging.debug(f"Processing {input_file} -> {output_file}")
         __process(fun, input_file, output_file, output_file_arg=output_file_arg)
 
-def get_duplicates(l):
+def __get_duplicates(l):
     from collections import defaultdict
     l_counts = defaultdict(int)
     for x in l:
@@ -49,9 +51,9 @@ def batch_rename(in_files, out_files, dry_run=False):
     intersect = set(in_files) & set(out_files)
     assert not intersect, f"Input and output file lists must not intersect: {intersect}"
 
-    in_files_duplicates = get_duplicates(in_files)
+    in_files_duplicates = __get_duplicates(in_files)
     assert not in_files_duplicates, f"Input files have duplicates: {in_files_duplicates}"
-    out_files_duplicates = get_duplicates(out_files)
+    out_files_duplicates = __get_duplicates(out_files)
     assert not out_files_duplicates, f"Output files have duplicates: {out_files_duplicates}"
 
     for in_file, out_file in zip(in_files, out_files):
