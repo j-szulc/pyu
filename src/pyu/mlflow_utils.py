@@ -20,9 +20,19 @@ def log_through_file(filegen: Callable[[Path], None], path: Path, print_uid=Fals
     if print_uid:
         print(f"Artifact UID: {artifact_uid}")
 
-def load_pickle(artifact_uid):
+def __get_pickle_engine(engine):
+    if engine == "pickle":
+        import pickle
+        return pickle
+    elif engine == "dill":
+        import dill
+        return dill
+    else:
+        raise ValueError(f"Invalid engine {engine}")
+
+def load_pickle(artifact_uid, engine="pickle"):
     import mlflow
-    import pickle
+    pickle = __get_pickle_engine(engine)
     downloaded = mlflow.artifacts.download_artifacts(artifact_uid)
     return pickle.load(open(downloaded, 'rb'))
 
@@ -51,8 +61,8 @@ def log_git(path="patch.txt", print_uid=False):
             f.write("\n")
     return log_through_file(helper, path, print_uid)
 
-def log_pickle(obj, path, print_uid=False):
-    import pickle
+def log_pickle(obj, path, print_uid=False, engine="pickle"):
+    pickle = __get_pickle_engine(engine)
     return log_through_file(lambda path: pickle.dump(obj, open(path, 'wb')), path, print_uid)
 
 @contextmanager
@@ -77,21 +87,6 @@ def log_metric(name, value, verbose=False):
     mlflow.log_metric(name, value)
     if verbose:
         print(f"{name}: {value}")
-
-@contextmanager
-def autolog(experiment_name=None):
-    import mlflow
-    if experiment_name is None:
-        from unique_names_generator import get_random_name
-        experiment_name = get_random_name()
-    mlflow.set_experiment(experiment_name)
-    mlflow.autolog()
-    with mlflow.start_run(), log_std():
-        try:
-            log_git()
-        except:
-            pass
-        yield
 
 def log_model(model, name=None, epoch=None, zfill=4, path="checkpoints", print_uid=False):
     import torch
@@ -127,3 +122,18 @@ def load_checkpoint(model, name=None, run_id="latest", epoch="latest", path="che
     checkpoint = torch.load(download_path, map_location=model.device)
     model.load_state_dict(checkpoint)
     return epoch
+
+@contextmanager
+def autolog(experiment_name=None):
+    import mlflow
+    if experiment_name is None:
+        from unique_names_generator import get_random_name
+        experiment_name = get_random_name()
+    mlflow.set_experiment(experiment_name)
+    mlflow.autolog()
+    with mlflow.start_run(), log_std():
+        try:
+            log_git()
+        except:
+            pass
+        yield
