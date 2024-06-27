@@ -20,7 +20,10 @@ def __process(fun, input_file, output_file, output_file_arg=False, ignore_errors
         if not ignore_errors:
             raise e
         import logging
-        logging.error(f"Failed processing {input_file} -> {output_file} with {e}")
+        logging.error(f"Failed processing {input_file} -> {output_file} with the following exception:")
+        import traceback as tb
+        for line in tb.format_exc().split("\n"):
+            logging.error(line)
     finally:
         if temp_output_file.exists():
             temp_output_file.unlink()
