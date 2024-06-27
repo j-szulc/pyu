@@ -15,14 +15,15 @@ def __process(fun, input_file, output_file, output_file_arg=False, ignore_errors
                 dump(result, f)
         temp_output_file.rename(output_file)
     except KeyboardInterrupt as e:
-        temp_output_file.unlink()
         raise e
     except Exception as e:
         if not ignore_errors:
             raise e
         import logging
         logging.error(f"Failed processing {input_file} -> {output_file} with {e}")
-        temp_output_file.unlink()
+    finally:
+        if temp_output_file.exists():
+            temp_output_file.unlink()
 
 def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", output_file_arg=False, new_root_dir=None, max_workers=None):
     from pathlib import Path
