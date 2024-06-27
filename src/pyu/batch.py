@@ -1,4 +1,5 @@
 from .parallelism import pmap
+from .traceback import print_traceback
 
 def __temp_in_working_dir(path, label="temp"):
     return path.with_suffix(f".{label}{path.suffix}")
@@ -21,10 +22,9 @@ def __process(fun, input_file, output_file, output_file_arg=False, ignore_errors
             raise e
         import logging
         logging.error(f"Failed processing {input_file} -> {output_file} with the following exception:")
-        import traceback as tb
-        for line in tb.format_exc().split("\n"):
-            logging.error(line)
+        print_traceback(e, logging_level=logging.ERROR)
     finally:
+        # TODO - try catch
         if temp_output_file.exists():
             temp_output_file.unlink()
 

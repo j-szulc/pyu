@@ -30,6 +30,7 @@ import sys
 import os
 import json
 from pyu.env_utils import override_env
+from pyu.builtins import exec_file
 from typing import List, Tuple
 import inspect
 
@@ -58,7 +59,7 @@ def rerun_file(file, *args, **kwargs):
         PYU_CLI_TO_LIB_NO_SYSEXIT='1',
         PYU_CLI_TO_LIB_OVERRIDE_ARGS=pyargs_to_cliargs(*args, **kwargs)
     ):
-        exec(open(file).read(), {**globals(), "__name__": "__main__"})
+        exec_file(file)
 
 def reparse_file(file, *args, **kwargs):
     with override_env(
