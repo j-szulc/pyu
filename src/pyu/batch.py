@@ -3,16 +3,26 @@ from .parallelism import pmap
 def __temp_in_working_dir(path, label="temp"):
     return path.with_suffix(f".{label}{path.suffix}")
 
-def __process(fun, input_file, output_file, output_file_arg=False):
+def __process(fun, input_file, output_file, output_file_arg=False, ignore_errors=True):
     from .dump import dump
     temp_output_file = __temp_in_working_dir(output_file, "incomplete")
-    if output_file_arg:
-        fun(input_file, temp_output_file)
-    else:
-        with open(temp_output_file, "wb") as f:
-            result = fun(input_file)
-            dump(result, f)
-    temp_output_file.rename(output_file)
+    try:
+        if output_file_arg:
+            fun(input_file, temp_output_file)
+        else:
+            with open(temp_output_file, "wb") as f:
+                result = fun(input_file)
+                dump(result, f)
+        temp_output_file.rename(output_file)
+    except KeyboardInterrupt as e:
+        temp_output_file.unlink()
+        raise e
+    except Exception as e:
+        if not ignore_errors:
+            raise e
+        import logging
+        logging.error(f"Failed processing {input_file} -> {output_file} with {e}")
+        temp_output_file.unlink()
 
 def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", output_file_arg=False, new_root_dir=None, max_workers=None):
     from pathlib import Path
