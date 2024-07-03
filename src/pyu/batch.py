@@ -7,6 +7,7 @@ def __temp_in_working_dir(path, label="temp"):
 def __process(fun, input_file, output_file, output_file_arg=False, ignore_errors=True):
     from .dump import dump
     temp_output_file = __temp_in_working_dir(output_file, "incomplete")
+    temp_output_file.parent.mkdir(parents=True, exist_ok=True)
     try:
         if output_file_arg:
             fun(input_file, temp_output_file)
