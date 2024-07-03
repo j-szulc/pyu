@@ -54,12 +54,12 @@ def pyargs_to_cliargs(*args, **kwargs):
 
 default_parser = None
 
-def rerun_file(file, *args, **kwargs):
+def rerun_file(file, *args, extra_globals=None, **kwargs):
     with override_env(
         PYU_CLI_TO_LIB_NO_SYSEXIT='1',
         PYU_CLI_TO_LIB_OVERRIDE_ARGS=pyargs_to_cliargs(*args, **kwargs)
     ):
-        exec_file(file)
+        exec_file(file, extra_globals=extra_globals)
 
 def reparse_file(file, *args, **kwargs):
     with override_env(
