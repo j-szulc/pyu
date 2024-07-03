@@ -16,12 +16,14 @@ def __format_exception(e, discriminator, filename, code):
     tb_str = custom_tb_string(e, "".join(tb_lines))
     return tb_str
 
-def exec_file(file):
+def exec_file(file, extra_globals=None):
+    if extra_globals is None:
+        extra_globals = {}
     discriminator = __gen_random_string()
     with open(file) as f:
         code = f.read()
     try:
-        exec(code, {**globals(), "__name__": "__main__", discriminator: None})
+        exec(code, {**globals(), "__name__": "__main__", **extra_globals, discriminator: None})
     except Exception as e:
         e.traceback_str = __format_exception(e, discriminator, file, code)
         raise e
