@@ -12,7 +12,7 @@ def print_traceback(e, logging_level=None):
     if hasattr(e, "traceback_str"):
         traceback_str = e.traceback_str
     else:
-        traceback_str = traceback.format_exc(e)
+        traceback_str = traceback.format_exc()
     if logging_level is not None:
         for line in traceback_str.split("\n"):
             logging.log(logging_level, line)

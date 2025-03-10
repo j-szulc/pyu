@@ -5,7 +5,7 @@ def __temp_in_working_dir(path, label="temp"):
     return path.with_suffix(f".{label}{path.suffix}")
 
 def __process(fun, input_file, output_file, output_file_arg=False, ignore_errors=True):
-    from .dump import dump
+    from dill import dump
     temp_output_file = __temp_in_working_dir(output_file, "incomplete")
     temp_output_file.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -29,7 +29,7 @@ def __process(fun, input_file, output_file, output_file_arg=False, ignore_errors
         if temp_output_file.exists():
             temp_output_file.unlink()
 
-def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", output_file_arg=False, new_root_dir=None, max_workers=None):
+def batch_process(fun, root_dir, input_ext=None, input_glob="./**/*", output_suffix=".out", output_file_arg=False, new_root_dir=None, max_workers=None, **kwargs):
     from pathlib import Path
     import logging
     from tqdm import tqdm
@@ -37,11 +37,17 @@ def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", outp
     if new_root_dir:
         new_root_dir = Path(new_root_dir)
         new_root_dir.mkdir(parents=True, exist_ok=True)
+    if input_ext and not input_ext.startswith("."):
+        input_ext = "." + input_ext
     to_process = []
+    all_output_files = []
     for input_file in root_dir.rglob(input_glob):
         if input_file.is_dir():
             continue
+        if input_ext and input_file.suffix != input_ext:
+            continue
         output_file = input_file.with_suffix(output_suffix)
+        all_output_files.append(output_file)
         if new_root_dir:
             output_file = new_root_dir / output_file.relative_to(root_dir)
         if output_file.exists():
@@ -52,8 +58,9 @@ def batch_process(fun, root_dir, input_glob="./**/*", output_suffix=".out", outp
         for input_file, output_file in tqdm(to_process):
             logging.debug(f"Processing {input_file} -> {output_file}")
             __process(fun, input_file, output_file, output_file_arg=output_file_arg)
-    else:
-        pmap(lambda in_, out: __process(fun, in_, out, output_file_arg), *zip(*to_process), max_workers=max_workers, use_dill=True)
+    elif to_process:
+        pmap(lambda in_, out: __process(fun, in_, out, output_file_arg, **kwargs), *zip(*to_process), max_workers=max_workers, use_dill=True)
+    return all_output_files
 
 def __get_duplicates(l):
     from collections import defaultdict
@@ -144,3 +151,36 @@ def simple_batch_rename(root_dir, filter_glob="./**/*", filter_out_dirs=True, fi
         rename_fun_list.append(override_parent)
 
     lambda_batch_rename(root_dir, rename_fun_list, filter_glob=filter_glob, filter_out_dirs=filter_out_dirs, filter_out_files=filter_out_files, dry_run=dry_run)
+
+from functools import wraps
+def catch(fun):
+    @wraps(fun)
+    def catch_fun(*args, **kwargs):
+        try:
+            return fun(*args, **kwargs)
+        except Exception as e:
+            import logging
+            logging.error(f"Failed processing {fun} with the following exception:")
+            print_traceback(e, logging_level=logging.ERROR)
+    return catch_fun
+# def delayed(fun):
+#     @wraps(fun)
+#     def delayed_fun(*args, **kwargs):
+#         return lambda: fun(*args, **kwargs)
+#     return delayed_fun
+
+# def map_verbose(funs, desc=None, total=None, **kwargs):
+#     from tqdm import tqdm
+#     if desc is None and funs:
+#         desc = funs[0].__name__
+#     errors = []
+#     for fun in tqdm(funs, desc=desc, total=total):
+#         try:
+#             yield fun()
+#         except Exception as e:
+#             import logging
+#             logging.error(f"Failed processing {fun} with the following exception:")
+#             print_traceback(e, logging_level=logging.ERROR)
+#             errors.append((fun, e))
+#     if errors:
+#         print(f"Got {len(errors)} errors.")

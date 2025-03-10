@@ -29,3 +29,10 @@ def zip_strict(*args):
             if qualname is None:
                 qualname = repr(arg)
             raise ValueError(f"zip_strict: iterator {i}({qualname}) has more elements than the others")
+
+def flatten(iterable):
+    for elem in iterable:
+        if isinstance(elem, (list, tuple)):
+            yield from flatten(elem)
+        else:
+            yield elem
